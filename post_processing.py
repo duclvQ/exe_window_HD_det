@@ -4,6 +4,7 @@ import numpy as np
 from sort import *
 import timeit
 import sys
+import math
 
 
 class Post_Processing:
@@ -136,11 +137,13 @@ class Post_Processing:
                 x1, y1, x2, y2, id = data_dict_with_id[start_frame_of_id][i]
 
                 if _id == id:
+                    distance = 100000
+
                     for _x1 in list(frame_info[start_frame_of_id].keys()):
-                        if abs(_x1 - x1) < 3:
+                        if math.sqrt((_x1 - x1)**2) < distance:
+                            distance = math.sqrt((_x1 - x1)**2)
                             x1 = _x1
-                            id_counter_dict[_id]['score'] = frame_info[start_frame_of_id][x1][1]
-                            break
+                    id_counter_dict[_id]['score'] = frame_info[start_frame_of_id][x1][1]
                     id_counter_dict[_id]['class_name'] = frame_info[start_frame_of_id][x1][0]
                     x_center, y_center = (x1 + x2) / 2, (y1 + y2) / 2
                     _w, _h = x2 - x1, y2 - y1

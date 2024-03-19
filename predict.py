@@ -31,7 +31,7 @@ parser.add_argument('--skip_similarity', type=int, default=0, help='skip similar
 # Parse arguments
 args = parser.parse_args()
 
-label_dict = {0: "china", 1:"vietnam", 2:"malaysia", 3:"nine_dash_line", 5:"flag"}
+label_dict = {0: "china", 1:"vietnam", 2:"malaysia", 3:"nine_dash_line",4:"nine_dash_line", 5:"flag"}
 
 start_time = time.time()
 
