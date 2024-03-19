@@ -50,6 +50,9 @@ class Post_Processing:
     def read_log(self):
         with open(self.log_path, 'r') as f:
             lines = f.readlines()
+        if lines == []:
+            print("log file is empty")
+            sys.exit(1)
         data_dict = {}
         frame_info = {}
         width, heihgt = 0, 0
