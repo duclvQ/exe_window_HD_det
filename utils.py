@@ -1,6 +1,27 @@
 import cv2 
 import numpy as np
 
+def get_first_two_digits(num: int) -> str:
+        if num>=100:
+            num/=10
+        num_str = str(num)
+        #print(num_str)
+        if '.' in num_str:
+            num_str = num_str.replace('.', '')
+        #print(num_str[:2].zfill(2))
+        return num_str[:2].zfill(2)
+
+def frame_to_timecode(frame_num, fps) -> str:
+        total_seconds = frame_num / fps
+        hours = int(total_seconds // 3600)
+        minutes = int((total_seconds % 3600) // 60)
+        seconds = int(total_seconds % 60)
+        miliseconds = frame_num%(int(fps))
+        
+        miliseconds = get_first_two_digits(miliseconds)
+        
+        
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}:{miliseconds}"
 def orange_color_identifier(img, threshold=10):
     """
     This function takes an image as input and returns True if the image contains a significant amount of orange color,

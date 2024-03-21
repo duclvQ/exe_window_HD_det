@@ -23,6 +23,7 @@ parser.add_argument('--model_path', type=str, default='model.pt', help='path to 
 parser.add_argument('--remove_wb', type=bool, default=True, help='remove white and black frames from the predicted results')
 parser.add_argument('--orange_percentage_threshold', type=int, default=10, help='minimum percentage of orange pixels required to return True')
 parser.add_argument('--model_resnet', type=str, default='flag_resnet18.pth', help='path to double check model')
+parser.add_argument('--post_process', type=bool, default=False, help='post process the results')
 parser.add_argument('--conf', type=float, default=0.2, help='minimum confidence threshold for detection')
 parser.add_argument('--stride', type=int, default=5, help='frame stride for detection')
 parser.add_argument('--run_on', type=int, default=0, help='choose which GPU to run on')
@@ -41,6 +42,7 @@ Detector = HD_Detection(video_path = args.video_path, \
                         model_path = args.model_path,     \
                         remove_wb = args.remove_wb, \
                         orange_percentage_threshold = args.orange_percentage_threshold, \
+                        
                         conf = args.conf,      \
                         stride = args.stride,      \
                         run_on = args.run_on,      \
@@ -50,18 +52,41 @@ Detector = HD_Detection(video_path = args.video_path, \
                         )
 # starting the detection
 Detector()
-# post processing
 post_process = Post_Processing(Detector.log_path, stride=args.stride, fps=Detector.video_FPS)
-post_process_results = post_process()
-for i in list(post_process_results.keys()):
-    class_name = post_process_results[i]['class_name']
-    first_frame = post_process_results[i]['frame_list'][0]
-    timecode = Detector.frame_to_timecode(first_frame, Detector.video_FPS)
-    position = post_process_results[i]['bbox']
-    confidence = post_process_results[i]['score']
-    duration = Detector.seconds_to_timecode(post_process_results[i]['duration'])
-    msg = f"INFO:root:[DETECTED]type=[{class_name}];timecode={timecode};duration={duration};position={position};confidence={confidence};frame={first_frame};w_h={Detector.width}x{Detector.height}"
-    print(msg)
+
+if args.post_process:
+    print("Post processing the results...")
+
+    # post processing
+    post_process_results = post_process()
+    for i in list(post_process_results.keys()):
+        class_name = post_process_results[i]['class_name']
+        first_frame = post_process_results[i]['frame_list'][0]
+        timecode = (first_frame / Detector.video_FPS)*1000
+        timecode = int(timecode) # convert to milliseconds
+        #timecode = Detector.frame_to_timecode(first_frame, Detector.video_FPS)
+        position = post_process_results[i]['bbox']
+        confidence = post_process_results[i]['score']
+        duration = post_process_results[i]['duration'] * 1000 # convert to milliseconds
+        duration = int(duration)
+        if duration == 0:
+            duration = 1
+        #msg = f"INFO:root:[DETECTED]type=[{class_name}];timecode={timecode};duration={duration};position={position};confidence={confidence};frame={first_frame};w_h={Detector.width}x{Detector.height}"
+        info = {
+            'TimeCode': timecode,
+            'XCenterCoordinates': position[0],
+            'YCenterCoordinates': position[1],
+            'Width': position[2],
+            'Height': position[3],
+            'Confidence': confidence
+
+        }
+        msg = f"[DETECTED]type=[{class_name}];timecode={timecode};duration={duration};position=[{info}]"
+        
+        print(msg)
+else:
+    post_process.print(Detector.video_FPS)
+        
 print('\n')
 print(f"Total inference time: {round(time.time() - start_time, 2)} seconds for a video of {Detector.total_frames} frames")
 

@@ -402,7 +402,7 @@ class HD_Detection:
         else:
             haft = True
         frame_shape = frame_list[0].shape
-        results = model.predict(source = frame_list, verbose=self.timing_inspection,  stream=False, save=False, show=False, device=self.device, half=haft, conf = conf)   
+        results = model.predict(source = frame_list, verbose=self.timing_inspection,  iou=0.3,augment=False,stream=False, save=False, show=False, device=self.device, half=False, conf = conf)   
         # get width and height of frame
         width_height = f"{self.width},{self.height}"
         for idx, r in enumerate(results):

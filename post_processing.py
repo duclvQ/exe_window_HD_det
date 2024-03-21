@@ -5,7 +5,7 @@ from sort import *
 import timeit
 import sys
 import math
-
+from utils import frame_to_timecode
 
 class Post_Processing:
     """
@@ -42,7 +42,7 @@ class Post_Processing:
             sys.exit(1)
         self.stride = stride
         self.FPS = fps
-        self.tracker = Sort(max_age=3, min_hits=1, iou_threshold=0.1)
+        self.tracker = Sort(max_age=2, min_hits=2, iou_threshold=0.3)
         self.tracker.reset()
     def __call__(self, ):
         return self.track()
@@ -55,13 +55,12 @@ class Post_Processing:
             sys.exit(1)
         data_dict = {}
         frame_info = {}
-        width, heihgt = 0, 0
+        width, height = 0, 0
         for line in lines:
             line = line[10:]
             line = line.split(";")
             frame_number = int(line[0])
-            
-            
+ 
             class_name = line[1]
             bbox = [int(float(i)) for i in line[2].split(",")]
             score = round(float(line[3]), 2)
@@ -71,11 +70,9 @@ class Post_Processing:
             if frame_number not in list(frame_info.keys()):
                 frame_info[frame_number] = {}
             frame_info[frame_number][bbox[0]] = [class_name, score]
-            
 
             if frame_number not in list(data_dict.keys()):
                 data_dict[frame_number] = detection
-
             else:
                 data_dict[frame_number] = np.vstack((data_dict[frame_number], detection))
         width, height = line[4].split(",")
@@ -86,7 +83,42 @@ class Post_Processing:
         self.width = width
         self.height = height
         return data_dict,  frame_info
-    
+    def print(self, fps: int=30, ):
+        with open(self.log_path, 'r') as f:
+            lines = f.readlines()
+        if lines == []:
+            print("log file is empty")
+            sys.exit(1)
+        width, height = 0, 0
+        for line in lines:
+            line = line[10:]
+            line = line.split(";")
+            width, height = line[4].split(",")
+            height = height.replace("\n", "")
+            self.width, self.height = int(width), int(height)
+            frame_number = int(line[0])
+            timecode = frame_to_timecode(frame_number, fps)
+            class_name = line[1]
+            duration = "1"    
+
+            bbox = [int(float(i)) for i in line[2].split(",")]
+            score = round(float(line[3]), 2)
+            x1, y1, x2, y2 = bbox
+            x_center, y_center = (x1 + x2) / 2, (y1 + y2) / 2
+            _w, _h = x2 - x1, y2 - y1
+            position = [x_center / self.width, y_center / self.height, _w / self.width, _h / self.height]
+            info = {
+            'TimeCode': timecode,
+            'XCenterCoordinates': position[0],
+            'YCenterCoordinates': position[1],
+            'Width': position[2],
+            'Height': position[3],
+            'Confidence': score
+
+            }
+            msg = f"[DETECTED]type=[{class_name}];timecode={timecode};duration={duration};position=[{info}]"
+            print(msg)
+        
     def track(self, ):
         data_dict, frame_info = self.read_log()
         id_counter_dict = {}
